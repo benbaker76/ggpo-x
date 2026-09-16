@@ -16,6 +16,19 @@
 
 static const int MAX_UDP_PACKET_SIZE = 4096;
 
+/* An optional filter on outgoing packets, for emulating a network that
+ * misbehaves (latency, jitter, packet loss) without needing a real one.
+ *
+ *   filter  return non-zero to have Udp send the packet itself as usual;
+ *           return 0 to take ownership of it -- hold it, or drop it.
+ *   pump    called on every network poll, so a filter holding packets has a
+ *           regular opportunity to release the ones now due.
+ *
+ * Both null by default, which costs one predictable branch per send. */
+typedef int  (*UdpSendFilter)(int socket, const char *buffer, int len, int flags,
+                              const struct sockaddr *dst, int dstlen);
+typedef void (*UdpPumpFn)(int socket);
+
 class Udp : public IPollSink
 {
 public:
@@ -35,6 +48,9 @@ protected:
    void Log(const char *fmt, ...);
 
 public:
+   /* Install (or clear, with nulls) the transport filter above. Process-wide. */
+   static void SetTransportFilter(UdpSendFilter filter, UdpPumpFn pump);
+
    Udp();
 
    void Init(uint16 port, Poll *p, Callbacks *callbacks);

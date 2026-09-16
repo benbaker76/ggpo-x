@@ -27,6 +27,7 @@ public:
    GGPOErrorCode DisconnectPlayer(GGPOPlayerHandle )  override { return GGPO_OK; }
    GGPOErrorCode Chat(const char* ) override { return GGPO_ERRORCODE_UNSUPPORTED; }
    GGPOErrorCode CurrentFrame(int& current) override;
+   GGPOErrorCode ConfirmedFrame(int& confirmed) override;
 protected:
    struct SavedInfo {
       int         frame;

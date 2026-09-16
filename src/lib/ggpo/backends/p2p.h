@@ -34,6 +34,7 @@ public:
    virtual GGPOErrorCode SetDisconnectNotifyStart(int timeout) override;
    virtual GGPOErrorCode Chat(const char* text) override;
    virtual GGPOErrorCode CurrentFrame(int& current) override;
+   virtual GGPOErrorCode ConfirmedFrame(int& confirmed) override;
 public:
    virtual void OnMsg(sockaddr_in &from, UdpMsg *msg, int len) override;
 

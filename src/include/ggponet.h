@@ -8,12 +8,30 @@
 #ifndef _GGPONET_H_
 #define _GGPONET_H_
 
+#include <stdarg.h>
+#ifdef __cplusplus
+#include <cstdint>
+#else
+/* SWOS United: C callers (src/netplay.c) include this header too. */
+#include <stdint.h>
+#include <stdbool.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdarg.h>
-#include <cstdint>
+/* SWOS United: portable spellings of the C++-only and MSVC-only bits below. */
+#if !defined(_MSC_VER) && !defined(__cdecl)
+#  define __cdecl
+#endif
+#ifdef __cplusplus
+#  define GGPO_DEFAULT(value) = value
+#  define GGPO_OUT_REF(type)  type&
+#else
+#  define GGPO_DEFAULT(value)
+#  define GGPO_OUT_REF(type)  type*
+#endif
 // On windows, export at build time and import at runtime.
 // ELF systems don't need an explicit export/import.
 #ifdef _WIN32
@@ -36,7 +54,11 @@ extern "C" {
 
 #define GGPO_SPECTATOR_INPUT_INTERVAL     4
 
+#ifdef __cplusplus
 typedef class GGPOSession GGPOSession;
+#else
+typedef struct GGPOSession GGPOSession;
+#endif
 
 typedef int GGPOPlayerHandle;
 
@@ -212,12 +234,13 @@ typedef struct {
  * your application must implement.  GGPO.net will periodically call these
  * functions during the game.  All callback functions must be implemented.
  */
+typedef struct GGPOSessionCallbacks GGPOSessionCallbacks;
 struct GGPOSessionCallbacks {
    /*
     * begin_game callback - This callback has been deprecated.  You must
     * implement it, but should ignore the 'game' parameter.
     */
-   bool (__cdecl *begin_game)(void* context, const char *game) = nullptr;
+   bool (__cdecl *begin_game)(void* context, const char *game) GGPO_DEFAULT(nullptr);
 
    /*
     * save_game_state - The client should allocate a buffer, copy the
@@ -225,7 +248,7 @@ struct GGPOSessionCallbacks {
     * length into the *len parameter.  Optionally, the client can compute
     * a checksum of the data and store it in the *checksum argument.
     */
-   bool (__cdecl *save_game_state)(void* context, unsigned char **buffer, int *len, int *checksum, int frame) = nullptr;
+   bool (__cdecl *save_game_state)(void* context, unsigned char **buffer, int *len, int *checksum, int frame) GGPO_DEFAULT(nullptr);
 
    /*
     * load_game_state - GGPO.net will call this function at the beginning
@@ -234,20 +257,20 @@ struct GGPOSessionCallbacks {
     * should make the current game state match the state contained in the
     * buffer.
     */
-   bool (__cdecl *load_game_state)(void* context, unsigned char *buffer, int len, int framesToRollback) = nullptr;
+   bool (__cdecl *load_game_state)(void* context, unsigned char *buffer, int len, int framesToRollback) GGPO_DEFAULT(nullptr);
 
    /*
     * log_game_state - Used in diagnostic testing.  The client should use
     * the ggpo_log function to write the contents of the specified save
     * state in a human readible form.
     */
-   bool (__cdecl *log_game_state)(void* context, char *filename, unsigned char *buffer, int len) = nullptr;
+   bool (__cdecl *log_game_state)(void* context, char *filename, unsigned char *buffer, int len) GGPO_DEFAULT(nullptr);
 
    /*
     * free_buffer - Frees a game state allocated in save_game_state.  You
     * should deallocate the memory contained in the buffer.
     */
-   void (__cdecl *free_buffer)(void* context, void *buffer) = nullptr;
+   void (__cdecl *free_buffer)(void* context, void *buffer) GGPO_DEFAULT(nullptr);
 
    /*
     * advance_frame - Called during a rollback.  You should advance your game
@@ -258,18 +281,18 @@ struct GGPOSessionCallbacks {
     *
     * The flags parameter is reserved.  It can safely be ignored at this time.
     */
-   bool (__cdecl *advance_frame)(void* context, int flags) = nullptr;
+   bool (__cdecl *advance_frame)(void* context, int flags) GGPO_DEFAULT(nullptr);
 
    /* 
     * on_event - Notification that something has happened.  See the GGPOEventCode
     * structure above for more information.
     */
-   bool (__cdecl *on_event)(void* context, GGPOEvent *info) = nullptr;
+   bool (__cdecl *on_event)(void* context, GGPOEvent *info) GGPO_DEFAULT(nullptr);
 
    /*
    * Calling context
    */
-   void* context=nullptr;
+   void* context GGPO_DEFAULT(nullptr);
 } ;
 
 /*
@@ -543,7 +566,13 @@ GGPO_API GGPOErrorCode __cdecl ggpo_advance_frame(GGPOSession *, uint16_t checks
  * ggpo_get_current_frame -- current frame GGPO is dealing with
  *
  */
-GGPO_API GGPOErrorCode __cdecl ggpo_get_current_frame(GGPOSession* ggpo, int& nFrame);
+GGPO_API GGPOErrorCode __cdecl ggpo_get_current_frame(GGPOSession* ggpo, GGPO_OUT_REF(int) nFrame);
+
+/*
+ * ggpo_get_confirmed_frame -- SWOS United: the last frame whose input from every player is
+ * known, so that nothing up to it will be rolled back again (-1 before any).
+ */
+GGPO_API GGPOErrorCode __cdecl ggpo_get_confirmed_frame(GGPOSession* ggpo, GGPO_OUT_REF(int) nFrame);
 /*
  * ggpo_get_network_stats --
  *

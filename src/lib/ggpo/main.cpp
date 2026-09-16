@@ -11,12 +11,14 @@
 #include "backends/spectator.h"
 #include "ggponet.h"
 
+#if defined(_WINDOWS)
 BOOL WINAPI
 DllMain(HINSTANCE , DWORD , LPVOID )
 {
    srand(Platform::GetCurrentTimeMS() + Platform::GetProcessID());
    return TRUE;
 }
+#endif
 
 void
 ggpo_log(GGPOSession *ggpo, const char *fmt, ...)
@@ -147,6 +149,16 @@ ggpo_get_current_frame(GGPOSession *ggpo, int& nFrame)
       return GGPO_ERRORCODE_INVALID_SESSION;
    }
    return ggpo->CurrentFrame(nFrame);
+}
+
+/* SWOS United: see ggponet.h. */
+GGPOErrorCode
+ggpo_get_confirmed_frame(GGPOSession *ggpo, int& nFrame)
+{
+   if (!ggpo) {
+      return GGPO_ERRORCODE_INVALID_SESSION;
+   }
+   return ggpo->ConfirmedFrame(nFrame);
 }
 
 GGPOErrorCode

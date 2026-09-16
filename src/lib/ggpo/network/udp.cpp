@@ -18,7 +18,9 @@ CreateSocket(uint16 bind_port, int retries)
 
    s = socket(AF_INET, SOCK_DGRAM, 0);
    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (const char *)&optval, sizeof optval);
+#ifdef SO_DONTLINGER   /* Winsock only */
    setsockopt(s, SOL_SOCKET, SO_DONTLINGER, (const char *)&optval, sizeof optval);
+#endif
 
    // non-blocking...
    u_long iMode = 1;
@@ -62,8 +64,27 @@ Udp::Init(uint16 port, Poll *poll, Callbacks *callbacks)
    _socket = CreateSocket(port, 0);
 }
 
+/* The optional transport filter. Static rather than per-instance: a process has
+ * one network, and a test that wants to model it wants to model all of it. */
+static UdpSendFilter s_sendFilter = nullptr;
+static UdpPumpFn     s_pump       = nullptr;
+
+void Udp::SetTransportFilter(UdpSendFilter filter, UdpPumpFn pump)
+{
+   s_sendFilter = filter;
+   s_pump       = pump;
+}
+
 bool Udp::SendTo(char *buffer, int len, int flags, struct sockaddr *dst, int destlen, int& errorcode)
 {
+   /* Optional transport filter (Udp::SetTransportFilter). A filter returning 0
+    * has taken ownership of the packet -- held for later, or dropped -- and
+    * this reports success, because from the sender's point of view that is
+    * exactly what a lossy network looks like. Used to emulate latency and
+    * packet loss without a real network; no filter installed, no cost. */
+   if (s_sendFilter && !s_sendFilter(_socket, buffer, len, flags, dst, destlen)) {
+      return true;
+   }
     // Just for artificially triggering a network error
    /* struct sockaddr_in* to = (struct sockaddr_in*)dst;
     if (GetKeyState('A') & 0x8000 && ntohs(to->sin_port)==9567)
@@ -91,9 +112,15 @@ bool Udp::SendTo(char *buffer, int len, int flags, struct sockaddr *dst, int des
 bool
 Udp::OnLoopPoll()
 {
+   /* Give a transport filter its regular tick: anything it is holding whose
+    * delay has elapsed goes out now. This is the network's own heartbeat, so
+    * it is the right place for it. */
+   if (s_pump)
+      s_pump(_socket);
+
    uint8          recv_buf[MAX_UDP_PACKET_SIZE];
    sockaddr_in    recv_addr;
-   int            recv_addr_len;
+   socklen_t      recv_addr_len;
 
    for (;;) {
       recv_addr_len = sizeof(recv_addr);

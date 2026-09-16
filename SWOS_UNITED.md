@@ -1,42 +1,49 @@
-# GGPO-X in SWOS United
+# The `swos-united` branch
 
-Rollback networking library used by `src/netplay.c` (see `docs/NETPLAY.md`).
+This branch is what SWOS United (github.com/benbaker76/SWOS-United) builds
+against, as a submodule at `third_party/ggpo-x`.
 
-| | |
-|---|---|
-| Upstream | https://github.com/thomashenry79/ggpo-x (a fork of GGPO, MIT — see `LICENSE`) |
-| Commit | `a24d115d4dc0616333d9031bc7e83f759365b430` ("change mtd options for 32-bit verison") |
-| Taken from | `C:\Projects\GitHub\swos-2020\ggpo-x`, SWOS 2020's submodule, pinned at that commit |
-| Copied | `LICENSE`, `README.md`, `src/include/`, `src/lib/` — the library only. Not the VectorWar sample app, the Visual Studio projects or the CMake files: the main `Makefile` builds it (`NETPLAY=1`). |
+**The patch list is the diff**, not a table someone has to keep honest:
 
-Keep the upstream layout, so a diff against a fresh checkout of that commit shows
-exactly the patches below. When updating, re-apply them and re-run
-`bin/SWOS.x86_64 --netplay-selftest`.
+```bash
+git diff master...swos-united
+```
 
-## Patches
+Based on **`a24d115`** — the commit SWOS 2020 pins — rather than the tip of
+`master`, because that is the base SWOS United's tests are green on. `master` is
+several commits ahead; catching up is a separate change to make deliberately,
+with those tests as the gate. Two of the commits in between look directly
+relevant and worth reading first: `b0428eb` ("Big improvemnts in rift handling")
+and `9f59543` ("Don't deal with input delay inside GGPO").
 
-Upstream ggpo-x has only ever been built on Windows with MSVC: its Linux platform
-file did not compile, and the network and logging code call Winsock and the MSVC
-secure CRT directly. SWOS United builds it with GCC/Clang on Linux, Cygwin and
-macOS, and calls it from C.
+## What is on it
 
-| File | Change | Why |
-|---|---|---|
-| `src/include/ggponet.h` | `<stdint.h>`/`<stdbool.h>` for C; `GGPOSession` a `struct` in C; `typedef struct GGPOSessionCallbacks`; default member initializers and the `int&` of `ggpo_get_current_frame` behind `GGPO_DEFAULT`/`GGPO_OUT_REF`; empty `__cdecl` where the compiler has none | The API is `extern "C"` but the header was C++-only. With these, C includes it directly — no bridge layer. |
-| `src/lib/ggpo/platform_linux.h` | Rewritten: BSD socket headers; `SOCKET`, `INVALID_SOCKET`, `SOCKET_ERROR`, `WSAGetLastError`, `WSAEWOULDBLOCK`, `closesocket`, `ioctlsocket(FIONBIO)` (via `fcntl`); `sprintf_s`, `vsprintf_s`, `strcpy_s`, `strncat_s`, `fopen_s`; `min`/`max` as function templates; `TRUE`/`FALSE`, `MAX_PATH`; `OutputDebugStringA` (no-op), `DebugBreak` (`abort`), `CreateDirectoryA` (`mkdir`); `<utility>`, `<climits>`, `<stdexcept>`; `Platform::GetConfigInt/GetConfigBool`; `AssertFailed` prints to stderr | The Windows names the library uses, on POSIX. Call sites untouched. |
-| `src/lib/ggpo/platform_linux.cpp` | Missing semicolons; includes `types.h` (for `uint32`); `GetConfigInt/Bool` return 0/false like `platform_windows.cpp` | Did not compile. |
-| `src/lib/ggpo/main.cpp` | `DllMain` under `#if defined(_WINDOWS)` | Windows DLL entry point. |
-| `src/lib/ggpo/network/udp.cpp` | `SO_DONTLINGER` under `#ifdef`; `recvfrom` length is `socklen_t` | Winsock-only option; POSIX `recvfrom` takes `socklen_t *`. |
-| `src/lib/ggpo/network/udp_proto.cpp` | `sin_addr.S_un.S_addr` -> `sin_addr.s_addr` | `S_un` is Winsock-only; `s_addr` works on both. |
-| `src/lib/ggpo/backends/p2p.cpp` | `max(maxDif, diff)` -> a conditional; `std::exception(buf)` -> `std::runtime_error(buf)` (+ `<stdexcept>`) | A local named `max` shadows a function (MSVC's `max` is a macro); `std::exception(const char *)` is an MSVC extension. |
-| `src/lib/ggpo/backends/synctest.cpp` | `BeginLog` returns, and the per-frame `Checksum ... for frame N matches.` line is not printed, unless `Platform::GetConfigBool("ggpo.log")` | Otherwise a synctest opens two log files **per frame** in the working directory — on POSIX, 1200 files named `synclogs\log-NNNN-*.log` (with the backslash) in `bin/` for the 600-frame self-test — and prints a line per frame to stdout: tens of thousands for a whole match (`--netplay-match=synctest`). A mismatch still prints and aborts. |
-| `src/include/ggponet.h`, `src/lib/ggpo/main.cpp`, `sync.h`, `backends/backend.h`, `backends/p2p.*`, `backends/synctest.*` | `ggpo_get_confirmed_frame`: the sync layer's last confirmed frame (a synctest: every frame played) | A peer may end a match only on a frame nothing will roll back again (docs/NETPLAY.md §5), and upstream exposes only the current frame. |
+**Portability.** ggpo-x has only ever been built on Windows with MSVC: the Linux
+platform file did not compile, and the network and logging code call Winsock and
+the MSVC secure CRT directly. This builds with GCC and Clang on Linux, Cygwin
+and macOS, and is callable from C without a bridge layer. Nothing here is
+SWOS-specific and all of it should be useful to anyone off Windows.
 
-`platform_windows.*` are unmodified and not built.
+**Two additions.**
 
-## Known upstream behaviour, left as is
+- `ggpo_get_confirmed_frame` — the sync layer's last confirmed frame. A peer may
+  only end a match on a frame that nothing will roll back again, and upstream
+  exposes only the *current* frame.
+- `Udp::SetTransportFilter(filter, pump)` — an optional filter on outgoing
+  packets, for emulating latency, jitter and packet loss without a real network.
+  A filter returning 0 takes ownership of the packet (holds it, or drops it) and
+  the send reports success, because that is what a lossy link looks like to a
+  sender. Both pointers are null by default, so an unfiltered build pays one
+  predictable branch per send. Deliberately generic: no SWOS types, no SWOS
+  headers, nothing to strip if it ever goes upstream.
 
-- `GetConfigBool` is always false, so GGPO's own log file (`ggpo.log`) never opens —
-  which matters, because `log.cpp` reuses a consumed `va_list`.
-- `Peer2PeerBackend::IncrementFrame` throws a C++ exception on an internal
-  invariant failure. It propagates through C frames, so it terminates the process.
+## Keeping it
+
+Rebase onto a newer upstream rather than merging, so the diff stays readable as
+a patch series. After any change, SWOS United must still pass:
+
+```bash
+bin/SWOS.x86_64 --netplay-selftest        # GGPO's own tests + the link
+scripts/netplay_test.sh --modes "direct p2p"   # a recorded match, frame for frame
+scripts/netplay_live_test.sh              # two processes playing each other
+```

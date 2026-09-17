@@ -33,7 +33,7 @@ SpectatorBackend::SpectatorBackend(GGPOSessionCallbacks *cb,
    /*
     * Init the host endpoint
     */
-   _host.Init(&_udp, _poll, 0, hostip, hostport, NULL);
+   _host.Init(&_udp, _poll, 0, hostip, hostport, NULL,60.0f);
    _host.Synchronize();
 
    /*
@@ -168,6 +168,7 @@ SpectatorBackend::OnUdpProtocolEvent(UdpProtocol::Event &evt)
    break;
    }
    case UdpProtocol::Event::Type::Unknown:
+   case UdpProtocol::Event::Type::NetworkError:
        break;
    }
 }

@@ -23,8 +23,10 @@ void TimeSync::SetFrameDelay(int frame)
 void
 TimeSync::advance_frame(GameInput &input, float advantage, float radvantage)
 {
+    advantage -= _remoteFrameDelay;
+    radvantage *= -1;
    // Remember the last frame and frame advantage
-   _local[input.frame % ARRAY_SIZE(_local)] = advantage;
+    _local[input.frame % ARRAY_SIZE(_local)] = advantage;
    _remote[input.frame % ARRAY_SIZE(_remote)] = radvantage;
    
   
@@ -33,8 +35,9 @@ TimeSync::advance_frame(GameInput &input, float advantage, float radvantage)
   
    nFrame++;   
    //Clear after first 3 seconds, as this is a bit crazy
-   if (!clearedInitial && nFrame == 240)
+   if (!clearedInitial && nFrame == 300)
    {
+       _avgLocal = _avgRemote = 0;
        clearedInitial = true;
        nFrame = 0;
    }
@@ -72,13 +75,13 @@ TimeSync::recommend_frame_wait_duration(bool )
    // See if someone should take action.  The person furthest ahead
    // needs to slow down so the other user can catch up.
    // Only do this if both clients agree on who's ahead!!
-  
+    
  
  //  if (advantage  >= radvantage) {
       
    //   return 0;
   // }
-   float sleep_frames = (((radvantage - advantage) / 2.0f));
+   float sleep_frames = -(((radvantage + advantage) / 2.0f));
 
 
    return sleep_frames > 0  ? (float)MIN(sleep_frames, MAX_FRAME_ADVANTAGE) : (float)MAX(sleep_frames, -MAX_FRAME_ADVANTAGE);

@@ -61,6 +61,10 @@ public:
          struct {
              int errorCode;
          } network_error;
+         struct {
+             int localFrameDelay;
+             int remoteFrameDelay;
+         } syncInfo;
       } u;
 
       Event(Event::Type t = Event::Type::Unknown) : type(t) { };
@@ -73,7 +77,7 @@ public:
    UdpProtocol();
    virtual ~UdpProtocol();
 
-   void Init(Udp *udp, Poll &p, int queue, char *ip, u_short port, UdpMsg::connect_status *status);
+   void Init(Udp *udp, Poll &p, int queue, char *ip, u_short port, UdpMsg::connect_status *status,float fps);
 
    void Synchronize();
    bool GetPeerConnectStatus(int id, int *frame);
@@ -155,12 +159,12 @@ protected:
       sockaddr_in dest_addr;
       UdpMsg*     msg;
    }              _oo_packet;
-   RingBuffer<QueueEntry, 64> _send_queue;
+   RingBuffer<QueueEntry, 128> _send_queue;
 
    /*
     * Stats
     */
-   int            _round_trip_time = 0;
+   double            _round_trip_time = 0;
    int            _packets_sent=0;
    int            _bytes_sent=0;
    int            _kbps_sent=0;
@@ -190,11 +194,11 @@ protected:
     */
    float               _local_frame_advantage=0;
    float               _remote_frame_advantage=0;
-
+   float _fps;
    /*
     * Packet loss...
     */
-   RingBuffer<GameInput, 64>  _pending_output;
+   RingBuffer<GameInput, 128>  _pending_output;
    GameInput                  _last_received_input;
    GameInput                  _last_sent_input;
    GameInput                  _last_acked_input;
@@ -217,7 +221,7 @@ protected:
    /*
     * Event queue
     */
-   RingBuffer<UdpProtocol::Event, 64>  _event_queue;
+   RingBuffer<UdpProtocol::Event, 128>  _event_queue;
    std::vector<std::string> _chatMessages;
    UdpProtocol(const UdpProtocol&) = delete;
 };

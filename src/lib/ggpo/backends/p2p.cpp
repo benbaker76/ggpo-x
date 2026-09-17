@@ -16,7 +16,7 @@ Peer2PeerBackend::Peer2PeerBackend(GGPOSessionCallbacks *cb,
                                    const char *gamename,
                                    uint16 localport,
                                    int num_players,
-                                   int input_size, int nframes) :
+                                   int input_size, int nframes,float fps) :
     _sync(_local_connect_status, nframes),
     _num_spectators(0),
     _input_size(input_size),
@@ -26,7 +26,8 @@ Peer2PeerBackend::Peer2PeerBackend(GGPOSessionCallbacks *cb,
     
     _next_spectator_frame(0),
     _disconnect_timeout(DEFAULT_DISCONNECT_TIMEOUT),
-    _disconnect_notify_start(DEFAULT_DISCONNECT_NOTIFY_START)
+    _disconnect_notify_start(DEFAULT_DISCONNECT_NOTIFY_START),
+    _fps(fps)
    
    
 {
@@ -77,7 +78,7 @@ Peer2PeerBackend::AddRemotePlayer(char *ip,
     */
    _synchronizing = true;
    
-   _endpoints[queue].Init(&_udp, _poll, queue, ip, port, _local_connect_status);
+   _endpoints[queue].Init(&_udp, _poll, queue, ip, port, _local_connect_status,_fps);
    _endpoints[queue].SetDisconnectTimeout(_disconnect_timeout);
    _endpoints[queue].SetDisconnectNotifyStart(_disconnect_notify_start);
    _endpoints[queue].Synchronize();
@@ -97,7 +98,7 @@ GGPOErrorCode Peer2PeerBackend::AddSpectator(char *ip,
    }
    int queue = _num_spectators++;
 
-   _spectators[queue].Init(&_udp, _poll, queue + 1000, ip, port, _local_connect_status);
+   _spectators[queue].Init(&_udp, _poll, queue + 1000, ip, port, _local_connect_status, _fps);
    _spectators[queue].SetDisconnectTimeout(_disconnect_timeout);
    _spectators[queue].SetDisconnectNotifyStart(_disconnect_notify_start);
    _spectators[queue].Synchronize();
@@ -141,6 +142,7 @@ void Peer2PeerBackend::CheckDesync()
                 }
             }
         }
+        
         for (auto k : keysToRemove)
         {
             ep._remoteCheckSums.erase(k);
@@ -362,7 +364,7 @@ Peer2PeerBackend::AddLocalInput(GGPOPlayerHandle player,
       // confirmed local frame for this player.  this must come first so it
       // gets incorporated into the next packet we send.
 
-       // Send checksum for frames old enough to be confirmed (ie older then current - MaxPredictionFrames())
+       // Send checksum for frames old enough to be confirmed (ie older then current - (MaxPredictionFrames()+maxrollbackFrames))
 
        
       
@@ -543,10 +545,10 @@ Peer2PeerBackend::OnUdpProtocolPeerEvent(UdpProtocol::Event &evt, int queue)
             _sync.AddRemoteInput(queue, evt.u.input.input);
             // Notify the other endpoints which frame we received from a peer
             Log("setting remote connect status for queue %d to %d\n", queue, evt.u.input.input.frame);
-            _local_connect_status[queue].last_frame = evt.u.input.input.frame;
+            _local_connect_status[queue].last_frame = new_remote_frame;////evt.u.input.input.frame;
 
             auto remoteChecksum = evt.u.input.input.checksum;
-            int checkSumFrame = new_remote_frame - HowFarBackForChecksums();
+            int checkSumFrame = evt.u.input.input.frame - HowFarBackForChecksums();//new_remote_frame - HowFarBackForChecksums();
             if (checkSumFrame >= _endpoints[queue].RemoteFrameDelay()-1)
                 _endpoints[queue]._remoteCheckSumsThisFrame[checkSumFrame] = remoteChecksum;
          //   auto localChecksum = GetChecksumForConfirmedFrame(new_remote_frame);
@@ -616,7 +618,10 @@ Peer2PeerBackend::OnUdpProtocolEvent(UdpProtocol::Event &evt, GGPOPlayerHandle h
       info.code = GGPO_EVENTCODE_SYNCHRONIZED_WITH_PEER;
       info.u.synchronized.player = handle;
       _callbacks.on_event(_callbacks.context, &info);
-
+      int queue;
+      PlayerHandleToQueue(handle, &queue);
+      //THD comment out this line to go back (to "normal")
+   //  _sync.SetFrameDelay(queue, evt.u.syncInfo.localFrameDelay -evt.u.syncInfo.remoteFrameDelay);
       CheckInitialSync();
       break;
 
@@ -736,13 +741,14 @@ Peer2PeerBackend::SetFrameDelay(GGPOPlayerHandle player, int delay)
       return result;
    } _sync.SetFrameDelay(queue, delay);
    
+   //endpoints[queue].SetFrameDelay(delay);
    for (int i = 0; i < _num_players; i++) {
        if (_endpoints[i].IsInitialized()) {
            _endpoints[i].SetFrameDelay(delay);
           
        }
    }
-   ;
+   
    return GGPO_OK; 
 }
 

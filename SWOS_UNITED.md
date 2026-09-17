@@ -9,12 +9,20 @@ against, as a submodule at `third_party/ggpo-x`.
 git diff master...swos-united
 ```
 
-Based on **`a24d115`** — the commit SWOS 2020 pins — rather than the tip of
-`master`, because that is the base SWOS United's tests are green on. `master` is
-several commits ahead; catching up is a separate change to make deliberately,
-with those tests as the gate. Two of the commits in between look directly
-relevant and worth reading first: `b0428eb` ("Big improvemnts in rift handling")
-and `9f59543` ("Don't deal with input delay inside GGPO").
+Based on **`dd7fa14`**, upstream `master` as of 2026-09-17. It started on `a24d115`,
+the commit SWOS 2020 pins, and caught up by a merge, gated on the tests below. What
+the seven commits between them changed, for a two-player session like SWOS United's:
+
+- **`ggpo_start_session` takes the frame rate** (`float fps`, afaeb04). The remote
+  frame estimate used a hard-coded 60; SWOS plays at 50 (Amiga) or 70 (DOS).
+- **Time sync subtracts the REMOTE peer's input delay** (b0428eb); it subtracted our
+  own. Two peers with the same delay -- SWOS United always agrees one -- get the same
+  `frames_ahead` as before. `TimeSync::_frameDelay2` is now initialised: it was sent
+  uninitialised in the first sync request, and in every one when the delay is 0.
+- Ping is a 10-second smoothed average, `MAX_FRAME_ADVANTAGE` is 30, the send and
+  input queues are twice the size, and `remote_frames_behind` changed sign.
+- `9f59543` moves input delay out of the *VectorWar demo* only (it now simulates with
+  no delay and draws an older frame). The library's `ggpo_set_frame_delay` is unchanged.
 
 ## What is on it
 
@@ -58,8 +66,11 @@ never 0 at startup.
 
 ## Keeping it
 
-Rebase onto a newer upstream rather than merging, so the diff stays readable as
-a patch series. After any change, SWOS United must still pass:
+**Merge** a newer upstream; do not rebase. SWOS United's history pins commits of this
+branch as its submodule, and a rebase would rewrite them away -- every older SWOS United
+commit would then point at a GGPO that no longer exists on the remote. The patch list
+stays readable either way: `git diff master...swos-united` diffs from the merge base.
+After any change, SWOS United must still pass:
 
 ```bash
 bin/SWOS.x86_64 --netplay-selftest        # GGPO's own tests + the link

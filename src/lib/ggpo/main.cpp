@@ -44,14 +44,16 @@ ggpo_start_session(GGPOSession **session,
                    int num_players,
                    int input_size,
                    unsigned short localport,
-                   int maxPrediction)
+                   int maxPrediction,
+                   float fps)
 {
    Peer2PeerBackend *p2p = new Peer2PeerBackend(cb,
                                                  game,
                                                  localport,
                                                  num_players,
                                                  input_size,
-                                                    maxPrediction);
+                                                    maxPrediction,
+                                                    fps);
    if (!p2p->IsBound()) {
       delete p2p;
       *session = NULL;

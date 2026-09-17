@@ -14,7 +14,7 @@
 #define FRAME_WINDOW_SIZE           120
 #define MIN_UNIQUE_FRAMES           10
 #define MIN_FRAME_ADVANTAGE          3
-#define MAX_FRAME_ADVANTAGE          9
+#define MAX_FRAME_ADVANTAGE          30
 
 class TimeSync {
 public:
@@ -28,7 +28,7 @@ public:
    float AvgLocalAdvantageSinceStart() const { return _avgLocal; }
    float AvgRemoteAdvantageSinceStart() const { return _avgRemote; }
    void SetFrameDelay(int frame);
-   int _frameDelay2 ;
+   int _frameDelay2 =0;
    int _remoteFrameDelay = 0;;
 protected:
    float         _local[FRAME_WINDOW_SIZE];

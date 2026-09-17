@@ -577,6 +577,15 @@ GGPO_API GGPOErrorCode __cdecl ggpo_get_current_frame(GGPOSession* ggpo, GGPO_OU
  * known, so that nothing up to it will be rolled back again (-1 before any).
  */
 GGPO_API GGPOErrorCode __cdecl ggpo_get_confirmed_frame(GGPOSession* ggpo, GGPO_OUT_REF(int) nFrame);
+
+/*
+ * ggpo_set_packet_key -- SWOS United: the 16-byte key every packet of this session is
+ * checksummed with (SipHash-2-4). Both peers must set the same key, before
+ * ggpo_add_player starts the sync; a packet that fails its checksum is dropped
+ * unread. Without a call the key is all zero, which still rejects packets damaged
+ * in transit but not ones forged by somebody who knows that.
+ */
+GGPO_API GGPOErrorCode __cdecl ggpo_set_packet_key(GGPOSession *ggpo, const unsigned char *key);
 /*
  * ggpo_get_network_stats --
  *

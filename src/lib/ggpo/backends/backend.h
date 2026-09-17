@@ -30,6 +30,8 @@ public:
    virtual GGPOErrorCode SetFrameDelay(GGPOPlayerHandle , int ) { return GGPO_ERRORCODE_UNSUPPORTED; }
    virtual GGPOErrorCode SetDisconnectTimeout(int ) { return GGPO_ERRORCODE_UNSUPPORTED; }
    virtual GGPOErrorCode SetDisconnectNotifyStart(int ) { return GGPO_ERRORCODE_UNSUPPORTED; }
+   /* SWOS United: the key packets are checksummed with (ggpo_set_packet_key). */
+   virtual GGPOErrorCode SetPacketKey(const uint8 *) { return GGPO_ERRORCODE_UNSUPPORTED; }
 };
 
 

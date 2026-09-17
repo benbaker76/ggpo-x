@@ -168,6 +168,18 @@ ggpo_get_confirmed_frame(GGPOSession *ggpo, int& nFrame)
 }
 
 GGPOErrorCode
+ggpo_set_packet_key(GGPOSession *ggpo, const unsigned char *key)
+{
+   if (!ggpo) {
+      return GGPO_ERRORCODE_INVALID_SESSION;
+   }
+   if (!key) {
+      return GGPO_ERRORCODE_INVALID_REQUEST;
+   }
+   return ggpo->SetPacketKey((const uint8 *)key);
+}
+
+GGPOErrorCode
 ggpo_client_chat(GGPOSession *ggpo, const char *text)
 {
    if (!ggpo) {

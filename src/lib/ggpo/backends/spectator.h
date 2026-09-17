@@ -22,6 +22,7 @@ public:
    SpectatorBackend(GGPOSessionCallbacks *cb, const char *gamename, uint16 localport, int num_players, int input_size, char *hostip, u_short hostport);
    virtual ~SpectatorBackend();
    bool IsBound() const { return _udp.IsBound(); }
+   GGPOErrorCode SetPacketKey(const uint8 *key) override { _udp.SetPacketKey(key); return GGPO_OK; }
 
 
 public:

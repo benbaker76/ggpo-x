@@ -56,6 +56,12 @@ public:
    void Init(uint16 port, Poll *p, Callbacks *callbacks);
    /* False when Init could not create or bind the socket. */
    bool IsBound() const { return _socket != INVALID_SOCKET; }
+
+   /* The key every packet's checksum is taken with (ggpo_set_packet_key). All zero
+    * until set, which still catches a packet damaged on the way. */
+   void SetPacketKey(const uint8 key[16]);
+   /* SipHash-2-4 of `len` bytes under that key, folded to 32 bits. */
+   uint32 PacketMac(const uint8 *data, int len) const;
    
    bool SendTo(char *buffer, int len, int flags, struct sockaddr *dst, int destlen, int& errorCode);
 
@@ -70,6 +76,8 @@ protected:
 
    // state management
    Callbacks      *_callbacks;
+
+   uint64         _key0, _key1;
 };
 
 #endif

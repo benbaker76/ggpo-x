@@ -28,6 +28,7 @@
 typedef unsigned char uint8;
 typedef unsigned short uint16;
 typedef unsigned int uint32;
+typedef unsigned long long uint64;   /* SWOS United: SipHash (network/udp.cpp) */
 typedef unsigned char byte;
 typedef char int8;
 typedef short int16;

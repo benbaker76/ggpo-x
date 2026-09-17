@@ -306,6 +306,8 @@ UdpProtocol::SendMsg(std::unique_ptr<UdpMsg>&& msg)
 
    msg->hdr.magic = _magic_number;
    msg->hdr.sequence_number = _next_send_seq++;
+   msg->hdr.mac = 0;
+   msg->hdr.mac = _udp->PacketMac((const uint8 *)msg.get(), msg->PacketSize());
 
    _send_queue.push(QueueEntry(Platform::GetCurrentTimeMS(), _peer_addr, std::move(msg)));
    PumpSendQueue();
@@ -338,6 +340,24 @@ UdpProtocol::OnMsg(UdpMsg *msg, int len)
       &UdpProtocol::OnInputAck,            /* InputAck */
       &UdpProtocol::OnChat,            /* InputAck */
    };
+
+   /* SWOS United: before anything reads a field, the packet has to be the size its
+    * header claims and carry our checksum (Udp::PacketMac). What fails is dropped
+    * as if it never arrived; GGPO resends anything unacknowledged. */
+   if (!msg->SizeIsValid(len)) {
+      Log("dropping a packet of the wrong size (%d bytes).\n", len);
+      return;
+   }
+   {
+      uint32 mac = msg->hdr.mac;
+      msg->hdr.mac = 0;
+      uint32 expected = _udp->PacketMac((const uint8 *)msg, len);
+      msg->hdr.mac = mac;
+      if (mac != expected) {
+         Log("dropping a packet that fails its checksum.\n");
+         return;
+      }
+   }
 
    // filter out messages that don't match what we expect
    uint16 seq = msg->hdr.sequence_number;

@@ -24,7 +24,7 @@ the MSVC secure CRT directly. This builds with GCC and Clang on Linux, Cygwin
 and macOS, and is callable from C without a bridge layer. Nothing here is
 SWOS-specific and all of it should be useful to anyone off Windows.
 
-**Three additions.**
+**Four additions, and one fix.**
 
 - `ggpo_get_confirmed_frame` — the sync layer's last confirmed frame. A peer may
   only end a match on a frame that nothing will roll back again, and upstream
@@ -41,6 +41,20 @@ SWOS-specific and all of it should be useful to anyone off Windows.
   returns `GGPO_OK`, so a session on a port that is already taken runs with no
   socket and waits forever for a peer it cannot hear. Found on Windows, where WSL2's
   mirrored networking reserves a whole block of ports that nothing lists.
+- **Packet integrity.** Every packet carries SipHash-2-4 of itself under a per-session
+  key (`hdr.mac`, `Udp::PacketMac`) and must be exactly the size its header describes
+  (`UdpMsg::SizeIsValid`); what fails is dropped before any field is read.
+  `ggpo_set_packet_key` sets the 16-byte key, before `ggpo_add_player`; without it the
+  key is zero, which still rejects damaged packets. Upstream checked only a 16-bit magic
+  number, so one flipped bit in `start_frame` ended a match, and so could one forged
+  packet with `disconnect_requested` set. **This changes the wire format**: a build with
+  it and one without cannot play each other.
+
+**The fix: `Platform::GetCurrentTimeMS` never returns 0** on the POSIX platform layer. It
+returned 0 on its first call, so the first sync request was stamped 0 and
+`UdpProtocol::OnLoopPoll` (`if (_last_send_time && ...)`) never re-sent it: if that
+packet was lost, both peers waited for each other forever. Windows' `timeGetTime` is
+never 0 at startup.
 
 ## Keeping it
 

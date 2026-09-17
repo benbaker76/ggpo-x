@@ -19,6 +19,7 @@ class Peer2PeerBackend : public GGPOSession,  Udp::Callbacks {
 public:
    Peer2PeerBackend(GGPOSessionCallbacks *cb, const char *gamename, uint16 localport, int num_players, int input_size, int nframes);
    virtual ~Peer2PeerBackend();
+   bool IsBound() const { return _udp.IsBound(); }
 
 
 public:

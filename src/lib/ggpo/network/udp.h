@@ -54,6 +54,8 @@ public:
    Udp();
 
    void Init(uint16 port, Poll *p, Callbacks *callbacks);
+   /* False when Init could not create or bind the socket. */
+   bool IsBound() const { return _socket != INVALID_SOCKET; }
    
    bool SendTo(char *buffer, int len, int flags, struct sockaddr *dst, int destlen, int& errorCode);
 

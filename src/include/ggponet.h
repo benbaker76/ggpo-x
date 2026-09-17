@@ -111,6 +111,9 @@ typedef struct GGPOLocalEndpoint {
 } GGPOLocalEndpoint;
 
 
+/* GGPO_ERRORCODE_NETWORK_ERROR: the session could not open its UDP socket, e.g. the
+ * local port is already taken. Before it existed the session started anyway, with
+ * no socket, and waited for a peer it could never hear. */
 #define GGPO_ERRORLIST                                               \
    GGPO_ERRORLIST_ENTRY(GGPO_OK,                               0)    \
    GGPO_ERRORLIST_ENTRY(GGPO_ERRORCODE_SUCCESS,                0)    \
@@ -126,7 +129,8 @@ typedef struct GGPOLocalEndpoint {
    GGPO_ERRORLIST_ENTRY(GGPO_ERRORCODE_PLAYER_DISCONNECTED,    9)    \
    GGPO_ERRORLIST_ENTRY(GGPO_ERRORCODE_TOO_MANY_SPECTATORS,   10)    \
    GGPO_ERRORLIST_ENTRY(GGPO_ERRORCODE_INVALID_REQUEST,       11)    \
-   GGPO_ERRORLIST_ENTRY(GGPO_CHAT_MESSAGE_TOO_LONG,           12)
+   GGPO_ERRORLIST_ENTRY(GGPO_CHAT_MESSAGE_TOO_LONG,           12)    \
+   GGPO_ERRORLIST_ENTRY(GGPO_ERRORCODE_NETWORK_ERROR,         13)
 
 #define GGPO_ERRORLIST_ENTRY(name, value)       name = value,
 typedef enum {

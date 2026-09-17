@@ -46,12 +46,18 @@ ggpo_start_session(GGPOSession **session,
                    unsigned short localport,
                    int maxPrediction)
 {
-   *session= new Peer2PeerBackend(cb,
+   Peer2PeerBackend *p2p = new Peer2PeerBackend(cb,
                                                  game,
                                                  localport,
                                                  num_players,
                                                  input_size,
                                                     maxPrediction);
+   if (!p2p->IsBound()) {
+      delete p2p;
+      *session = NULL;
+      return GGPO_ERRORCODE_NETWORK_ERROR;
+   }
+   *session = p2p;
    return GGPO_OK;
 }
 
@@ -219,13 +225,19 @@ GGPOErrorCode ggpo_start_spectating(GGPOSession **session,
                                     char *host_ip,
                                     unsigned short host_port)
 {
-   *session= new SpectatorBackend(cb,
+   SpectatorBackend *spectator = new SpectatorBackend(cb,
                                                  game,
                                                  local_port,
                                                  num_players,
                                                  input_size,
                                                  host_ip,
                                                  host_port);
+   if (!spectator->IsBound()) {
+      delete spectator;
+      *session = NULL;
+      return GGPO_ERRORCODE_NETWORK_ERROR;
+   }
+   *session = spectator;
    return GGPO_OK;
 }
 

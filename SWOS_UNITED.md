@@ -24,7 +24,7 @@ the MSVC secure CRT directly. This builds with GCC and Clang on Linux, Cygwin
 and macOS, and is callable from C without a bridge layer. Nothing here is
 SWOS-specific and all of it should be useful to anyone off Windows.
 
-**Two additions.**
+**Three additions.**
 
 - `ggpo_get_confirmed_frame` — the sync layer's last confirmed frame. A peer may
   only end a match on a frame that nothing will roll back again, and upstream
@@ -36,6 +36,11 @@ SWOS-specific and all of it should be useful to anyone off Windows.
   sender. Both pointers are null by default, so an unfiltered build pays one
   predictable branch per send. Deliberately generic: no SWOS types, no SWOS
   headers, nothing to strip if it ever goes upstream.
+- `GGPO_ERRORCODE_NETWORK_ERROR` from `ggpo_start_session` / `ggpo_start_spectating`
+  when the UDP socket could not be opened. Upstream ignores a failed bind and
+  returns `GGPO_OK`, so a session on a port that is already taken runs with no
+  socket and waits forever for a peer it cannot hear. Found on Windows, where WSL2's
+  mirrored networking reserves a whole block of ports that nothing lists.
 
 ## Keeping it
 

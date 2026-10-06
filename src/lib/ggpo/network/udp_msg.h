@@ -8,6 +8,8 @@
 #ifndef _UDP_MSG_H
 #define _UDP_MSG_H
 
+#include "ggponet.h"      /* GGPO_PREDICTION_BALANCE */
+
 #define MAX_COMPRESSED_BITS       4096
 #define UDP_MSG_MAX_PLAYERS          4
 #define MAX_CHAT_LENGTH          120
@@ -56,6 +58,13 @@ struct UdpMsg
       struct {
          int8        frame_advantage; /* what's the other guy's frame advantage? */
          uint32      ping;
+#if GGPO_PREDICTION_BALANCE
+         /* prediction_balance.h: the sender's average prediction depth, in
+          * hundredths of a frame, over the PredictionBalance::WINDOW frames
+          * ending at prediction_frame.  prediction_frame < 0: none yet. */
+         int32       prediction_frame;
+         uint16      prediction_depth;
+#endif
       } quality_report;
       
       struct {

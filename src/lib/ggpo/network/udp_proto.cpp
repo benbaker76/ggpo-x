@@ -231,7 +231,20 @@ UdpProtocol::OnLoopPoll()
          msg->u.quality_report.ping = Platform::GetCurrentTimeMS();
          // encode frame advantage into a byte by multiplying the float by 10, and croppeing to 255 - any frame advantage
          // of 25 or more means catastrophe has already befallen us.
-         msg->u.quality_report.frame_advantage = (uint8)min(255.0f,(_timesync.LocalAdvantage()*10.f));
+#if GGPO_SEND_FRAME_ADVANTAGE
+         /* Through a signed int: a negative float straight to uint8 is undefined. */
+         {
+            float tenths = _timesync.LocalAdvantage() * 10.f;
+            int clamped = (int)(tenths < -127.0f ? -127.0f : tenths > 127.0f ? 127.0f : tenths);
+            msg->u.quality_report.frame_advantage = (int8)clamped;
+         }
+#else
+         msg->u.quality_report.frame_advantage = 0;       /* see GGPO_SEND_FRAME_ADVANTAGE, ggponet.h */
+#endif
+#if GGPO_PREDICTION_BALANCE
+         msg->u.quality_report.prediction_frame = _local_prediction_frame;
+         msg->u.quality_report.prediction_depth = (uint16)_local_prediction_depth;
+#endif
          SendMsg(std::move(msg));
          _state.running.last_quality_report_time = now;
       }
@@ -702,8 +715,29 @@ UdpProtocol::OnQualityReport(UdpMsg *msg, int )
    SendMsg(std::move(reply));
 
    _remote_frame_advantage = (float)(msg->u.quality_report.frame_advantage/10.f);
+#if GGPO_PREDICTION_BALANCE
+   if (msg->u.quality_report.prediction_frame >= 0) {
+      _remote_prediction_frame = msg->u.quality_report.prediction_frame;
+      _remote_prediction_depth = msg->u.quality_report.prediction_depth;
+      _remote_prediction_new = true;
+   }
+#endif
    return true;
 }
+
+#if GGPO_PREDICTION_BALANCE
+bool
+UdpProtocol::GetRemotePredictionDepth(int *frame, int *average)
+{
+   if (!_remote_prediction_new) {
+      return false;
+   }
+   _remote_prediction_new = false;
+   *frame = _remote_prediction_frame;
+   *average = _remote_prediction_depth;
+   return true;
+}
+#endif
 
 bool
 UdpProtocol::OnQualityReply(UdpMsg *msg, int )

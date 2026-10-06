@@ -48,6 +48,27 @@ extern "C" {
 #  define GGPO_API
 #endif
 
+/*
+ * GGPO_PREDICTION_BALANCE -- 1 (the default) builds in the prediction balance
+ * (lib/ggpo/prediction_balance.h).  It adds two fields to the quality report
+ * packet, so both peers must be built alike: 0 for the packet as it was.
+ * ggpo_set_prediction_balance turns it off for a session at run time.
+ */
+#ifndef GGPO_PREDICTION_BALANCE
+#define GGPO_PREDICTION_BALANCE 1
+#endif
+
+/*
+ * GGPO_SEND_FRAME_ADVANTAGE -- 1 (the default) sends each peer's frame advantage in
+ * the quality report, as GGPO always has: the time sync's recommendation is then
+ * -(remote + local) / 2.  0 sends none, so a peer's recommendation rests on its own
+ * estimate alone, -local / 2.  A caller whose pacing was tuned that way sets 0
+ * (SWOS United does, see SWOS_UNITED.md); both peers must be built alike.
+ */
+#ifndef GGPO_SEND_FRAME_ADVANTAGE
+#define GGPO_SEND_FRAME_ADVANTAGE 1
+#endif
+
 #define GGPO_MAX_PLAYERS                  4
 //#define GGPO_MAX_PREDICTION_FRAMES        8
 #define GGPO_MAX_SPECTATORS              32
@@ -164,6 +185,13 @@ typedef enum {
  * GGPO_EVENTCODE_DISCONNECTED_FROM_PEER - The network connection on 
  * the other end of the network has closed.
  *
+ * GGPO_EVENTCODE_PREDICTION_BALANCE - This peer is predicting two frames or
+ * more deeper than the remote one (see lib/ggpo/prediction_balance.h).  It
+ * should wait u.prediction_balance.frames_to_wait of a frame, spread over the
+ * next spread_in_frames frames, as for a TIMESYNC event.  Only raised when the
+ * library is built with GGPO_PREDICTION_BALANCE (the default) and both peers
+ * have it on.
+ *
  * GGPO_EVENTCODE_TIMESYNC - The time synchronziation code has determined
  * that this client is too far ahead of the other one and should slow
  * down to ensure fairness.  The u.timesync.frames_ahead parameter in
@@ -181,7 +209,8 @@ typedef enum {
    GGPO_EVENTCODE_CONNECTION_RESUMED           = 1007,
    GGPO_EVENTCODE_CHAT                         = 1008,
    GGPO_EVENTCODE_DESYNC                       = 1009,
-   GGPO_EVENTCODE_NETWORK_ERROR                = 1010
+   GGPO_EVENTCODE_NETWORK_ERROR                = 1010,
+   GGPO_EVENTCODE_PREDICTION_BALANCE           = 1011
 
 } GGPOEventCode;
 
@@ -230,6 +259,12 @@ typedef struct {
       struct {
           int errorCode;
       } network_error;
+      struct {
+          float frames_to_wait;      /* of a frame, spread over spread_in_frames */
+          int   spread_in_frames;
+          float local_depth;         /* the two peers' average prediction depth, frames */
+          float remote_depth;
+      } prediction_balance;
    } u;
 } GGPOEvent;
 
@@ -578,6 +613,13 @@ GGPO_API GGPOErrorCode __cdecl ggpo_get_current_frame(GGPOSession* ggpo, GGPO_OU
  * known, so that nothing up to it will be rolled back again (-1 before any).
  */
 GGPO_API GGPOErrorCode __cdecl ggpo_get_confirmed_frame(GGPOSession* ggpo, GGPO_OUT_REF(int) nFrame);
+
+/*
+ * ggpo_set_prediction_balance -- turn the prediction balance (GGPO_PREDICTION_BALANCE,
+ * lib/ggpo/prediction_balance.h) off or on for this session.  On by default.  A peer
+ * with it off sends no depth, so it is then off for both.
+ */
+GGPO_API GGPOErrorCode __cdecl ggpo_set_prediction_balance(GGPOSession* ggpo, int enabled);
 
 /*
  * ggpo_set_packet_key -- SWOS United: the 16-byte key every packet of this session is

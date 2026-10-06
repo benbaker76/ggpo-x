@@ -8,6 +8,7 @@
 #ifndef _GGPO_LINUX_H_
 #define _GGPO_LINUX_H_
 
+#include <type_traits>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -114,9 +115,12 @@ inline int fopen_s(FILE **fp, const char *name, const char *mode)
 /* <windows.h> min/max, as functions rather than macros so they cannot collide
  * with std::min/std::max in the standard headers. */
 template <class A, class B>
-inline auto min(A a, B b) -> decltype(a < b ? a : b) { return a < b ? a : b; }
+inline auto min(A a, B b) -> typename std::decay<decltype(a < b ? a : b)>::type { return a < b ? a : b; }
 template <class A, class B>
-inline auto max(A a, B b) -> decltype(a > b ? a : b) { return a > b ? a : b; }
+inline auto max(A a, B b) -> typename std::decay<decltype(a > b ? a : b)>::type { return a > b ? a : b; }
+/* std::decay: with A and B the same type `a < b ? a : b` is an lvalue, so a bare decltype
+ * made these return a REFERENCE to one of their own parameters -- gone by the time the
+ * caller read it. */
 
 class Platform {
 public:  // types

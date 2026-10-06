@@ -94,6 +94,12 @@ public:
    void GetNetworkStats(struct GGPONetworkStats *stats);
    bool GetEvent(UdpProtocol::Event &e);
    void SetLocalFrameNumber(int num);
+#if GGPO_PREDICTION_BALANCE
+   /* prediction_balance.h: what the next quality report says of this peer, and
+    * what the remote one's last said of it (true once for each report). */
+   void SetLocalPredictionDepth(int frame, int average) { _local_prediction_frame = frame; _local_prediction_depth = average; }
+   bool GetRemotePredictionDepth(int *frame, int *average);
+#endif
    float RecommendFrameDelay();
    int RemoteFrameDelay()const;
    void SetDisconnectTimeout(int timeout);
@@ -194,6 +200,13 @@ protected:
     */
    float               _local_frame_advantage=0;
    float               _remote_frame_advantage=0;
+#if GGPO_PREDICTION_BALANCE
+   int                 _local_prediction_frame = -1;
+   int                 _local_prediction_depth = 0;
+   int                 _remote_prediction_frame = -1;
+   int                 _remote_prediction_depth = 0;
+   bool                _remote_prediction_new = false;
+#endif
    float _fps;
    /*
     * Packet loss...

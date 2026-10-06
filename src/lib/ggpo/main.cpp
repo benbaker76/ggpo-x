@@ -170,6 +170,15 @@ ggpo_get_confirmed_frame(GGPOSession *ggpo, int& nFrame)
 }
 
 GGPOErrorCode
+ggpo_set_prediction_balance(GGPOSession *ggpo, int enabled)
+{
+   if (!ggpo) {
+      return GGPO_ERRORCODE_INVALID_SESSION;
+   }
+   return ggpo->SetPredictionBalance(enabled != 0);
+}
+
+GGPOErrorCode
 ggpo_set_packet_key(GGPOSession *ggpo, const unsigned char *key)
 {
    if (!ggpo) {

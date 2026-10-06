@@ -13,6 +13,7 @@
 #include "sync.h"
 #include "backend.h"
 #include "timesync.h"
+#include "prediction_balance.h"
 #include "network/udp_proto.h"
 #include <map>
 class Peer2PeerBackend : public GGPOSession,  Udp::Callbacks {
@@ -37,6 +38,7 @@ public:
    virtual GGPOErrorCode Chat(const char* text) override;
    virtual GGPOErrorCode CurrentFrame(int& current) override;
    virtual GGPOErrorCode ConfirmedFrame(int& confirmed) override;
+   virtual GGPOErrorCode SetPredictionBalance(bool enabled) override;
 public:
    virtual void OnMsg(sockaddr_in &from, UdpMsg *msg, int len) override;
 
@@ -70,6 +72,10 @@ protected:
    bool                  _synchronizing;
    int                   _num_players;
    int                   _next_recommended_sleep;
+#if GGPO_PREDICTION_BALANCE
+   PredictionBalance     _balance;
+   bool                  _balance_enabled = true;
+#endif
 
    int                   _next_spectator_frame;
    int                   _disconnect_timeout;

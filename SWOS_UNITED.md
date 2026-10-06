@@ -32,7 +32,7 @@ the MSVC secure CRT directly. This builds with GCC and Clang on Linux, Cygwin
 and macOS, and is callable from C without a bridge layer. Nothing here is
 SWOS-specific and all of it should be useful to anyone off Windows.
 
-**Four additions, and one fix.**
+**Six additions, and two fixes.**
 
 - `ggpo_get_confirmed_frame` — the sync layer's last confirmed frame. A peer may
   only end a match on a frame that nothing will roll back again, and upstream
@@ -57,6 +57,44 @@ SWOS-specific and all of it should be useful to anyone off Windows.
   number, so one flipped bit in `start_frame` ended a match, and so could one forged
   packet with `disconnect_requested` set. **This changes the wire format**: a build with
   it and one without cannot play each other.
+
+- **Prediction balance** (`lib/ggpo/prediction_balance.h`, `GGPO_PREDICTION_BALANCE`,
+  on by default; 0 builds the library as it was). Keeps one peer from doing nearly all
+  the predicting. The time sync estimates the remote frame as the last input received
+  plus HALF the round trip, so on a route that is slower one way -- or with one machine a
+  fraction of a frame ahead -- both peers are reported level while one plays 2, 3 or 4
+  frames past the confirmed inputs and the other 0. Each peer knows its own depth
+  exactly, so:
+  - `Peer2PeerBackend::SyncInput` records the depth (frame - last confirmed frame) of
+    every frame's first play;
+  - the quality report carries the average over the last 90 frames and the frame that
+    window ends at (`prediction_frame`, `prediction_depth` -- **two new fields: both
+    peers must be built alike**);
+  - `DoPoll` compares the remote average with the LOCAL one over the SAME frames. When
+    the local peer is deeper by 1.5 frames or more it raises
+    `GGPO_EVENTCODE_PREDICTION_BALANCE`: wait a quarter of the gap, spread over 50 frames.
+    Then nothing until a window made only of frames played after that wait.
+
+  The thresholds are Fightcade's rift balancing (act only on a gap of frames, rarely);
+  the signal is not -- Fightcade uses the time sync's own figures, which cannot see the
+  one-way case. A gap under two frames is deliberately left alone: depth is whole frames,
+  and a peer at 1 with the other at 0 is the least a link short by under a frame allows
+  ("sharing" it puts both at 1). The caller does the waiting, as for `TIMESYNC`.
+  SWOS United's side and the measurements: its `docs/NETPLAY_BALANCE.md`.
+
+- **`GGPO_SEND_FRAME_ADVANTAGE`** (default 1, GGPO's own behaviour). 0 sends no frame
+  advantage in the quality report, so a peer's time sync recommendation rests on its own
+  estimate alone (`-local / 2`). SWOS United builds with 0: its pacing was tuned that way
+  (see the second fix below). With 1 the figure is converted through a signed int;
+  upstream casts a negative float straight to `uint8`, which is undefined.
+
+**Fix: `min` / `max` in `platform_linux.h` returned a dangling reference.** They stand in
+for `<windows.h>`'s macros, and their return type was a bare `decltype(a < b ? a : b)` --
+with both arguments of one type, a reference to one of the function's own parameters. The
+one caller is the line that fills in `quality_report.frame_advantage`, so **every build of
+this branch before 2026-10-06 sent garbage there** (compiled, it read four bytes of an
+unrelated pointer as a float: nearly always 0), and the time sync steered on it. Now
+`std::decay`. Upstream, on Windows, was never affected.
 
 **The fix: `Platform::GetCurrentTimeMS` never returns 0** on the POSIX platform layer. It
 returned 0 on its first call, so the first sync request was stamped 0 and

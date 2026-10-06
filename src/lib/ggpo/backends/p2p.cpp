@@ -217,6 +217,36 @@ Peer2PeerBackend::DoPoll()
             _sync.SetLastConfirmedFrame(total_min_confirmed);
          }
 
+#if GGPO_PREDICTION_BALANCE
+         /*
+          * prediction_balance.h.  The local average goes out in each endpoint's
+          * next quality report (none when it is off here: the remote peer then
+          * does nothing either); a remote one that has come in is compared with
+          * it, and the peer predicting two frames or more deeper is told to wait.
+          */
+         {
+            int frame = -1, average = 0, remote_frame, remote_average;
+            bool have = _balance_enabled && _balance.Report(&frame, &average);
+            for (int i = 0; i < _num_players; i++) {
+               if (_endpoints[i].IsInitialized()) {
+                  _endpoints[i].SetLocalPredictionDepth(have ? frame : -1, average);
+                  if (_endpoints[i].GetRemotePredictionDepth(&remote_frame, &remote_average) && _balance_enabled) {
+                     _balance.Remote(remote_frame, remote_average);
+                  }
+               }
+            }
+            GGPOEvent info;
+            if (_balance_enabled &&
+                _balance.Recommend(&info.u.prediction_balance.frames_to_wait,
+                                   &info.u.prediction_balance.local_depth,
+                                   &info.u.prediction_balance.remote_depth)) {
+               info.code = GGPO_EVENTCODE_PREDICTION_BALANCE;
+               info.u.prediction_balance.spread_in_frames = PredictionBalance::SPREAD;
+               _callbacks.on_event(_callbacks.context, &info);
+            }
+         }
+#endif
+
          // send timesync notifications if now is the proper time
          if (current_frame > _next_recommended_sleep) {
             float interval = 0;
@@ -410,6 +440,13 @@ Peer2PeerBackend::SyncInput(void *values,
    if (disconnect_flags) {
       *disconnect_flags = flags;
    }
+#if GGPO_PREDICTION_BALANCE
+   /* A frame's first play: how far past the confirmed inputs it runs. */
+   if (!_sync.InRollback()) {
+      int frame = _sync.GetFrameCount(), confirmed = _sync.GetLastConfirmedFrame();
+      _balance.Frame(frame, frame > confirmed ? frame - confirmed : 0);
+   }
+#endif
    return GGPO_OK;
 }
 GGPOErrorCode Peer2PeerBackend::CurrentFrame(int& current)
@@ -423,6 +460,19 @@ GGPOErrorCode Peer2PeerBackend::ConfirmedFrame(int& confirmed)
 {
     confirmed = _sync.GetLastConfirmedFrame();
     return GGPO_OK;
+}
+GGPOErrorCode Peer2PeerBackend::SetPredictionBalance(bool enabled)
+{
+#if GGPO_PREDICTION_BALANCE
+    if (enabled != _balance_enabled) {
+        _balance_enabled = enabled;
+        _balance.Reset();
+    }
+    return GGPO_OK;
+#else
+    (void)enabled;
+    return GGPO_ERRORCODE_UNSUPPORTED;
+#endif
 }
 GGPOErrorCode
 Peer2PeerBackend::IncrementFrame(uint16_t checksum1)

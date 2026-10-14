@@ -57,8 +57,13 @@ Sync::SetLastConfirmedFrame(int frame)
 bool
 Sync::AddLocalInput(int queue, GameInput &input)
 {
-   int frames_behind = _framecount - _last_confirmed_frame; 
-   if (_framecount >= _max_prediction_frames && frames_behind >= _max_prediction_frames) {
+   // Until any input from the other player has been confirmed, predict only 1 frame
+   // (thd79). Each peer leaves the sync phase on its own; without this the first one
+   // out predicted the whole window while the other was still synchronizing, and the
+   // two spent the start of the match pulling back into step.
+   int predFrames = _last_confirmed_frame == -1 ? 1 : _max_prediction_frames;
+   int frames_behind = _framecount - _last_confirmed_frame;
+   if (_framecount >= predFrames && frames_behind >= predFrames) {
       Log("Rejecting input from emulator: reached prediction barrier.\n");
       return false;
    }

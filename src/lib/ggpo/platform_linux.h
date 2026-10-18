@@ -18,13 +18,13 @@
 #include <stdlib.h>
 
 /*
- * SWOS United: the POSIX platform layer (Linux, macOS, Cygwin).
+ * OpenSWOS: the POSIX platform layer (Linux, macOS, Cygwin).
  *
  * Upstream ggpo-x has only ever been built on Windows: this header and its .cpp
  * did not compile, and the network and logging code call Winsock and the MSVC
  * secure CRT directly. Rather than touch every call site, the Windows names they
  * use are provided here on top of BSD sockets and the C library. See
- * third_party/ggpo-x/SWOS_UNITED.md for the full patch list.
+ * third_party/ggpo-x/OPENSWOS.md for the full patch list.
  */
 #include <fcntl.h>
 #include <sys/socket.h>

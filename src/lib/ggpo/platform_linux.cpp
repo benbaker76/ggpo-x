@@ -17,7 +17,7 @@ static struct timespec start = { 0, 0 };
  * so the very first sync request of a process was stamped 0, and if THAT packet was
  * lost the retry never fired: both peers sat waiting for each other for good. Windows'
  * timeGetTime is never 0 at startup, which is why upstream never saw it. Found by the
- * packet-tampering test (SWOS United netplay_netem.c), which loses first packets. */
+ * packet-tampering test (OpenSWOS netplay_netem.c), which loses first packets. */
 uint32 Platform::GetCurrentTimeMS() {
     if (start.tv_sec == 0 && start.tv_nsec == 0)
         clock_gettime(CLOCK_MONOTONIC, &start);

@@ -20,7 +20,7 @@ public:
    virtual GGPOErrorCode SyncInput(void *values, int size, int *disconnect_flags) = 0;
    virtual GGPOErrorCode IncrementFrame(uint16_t checksum) = 0;
    virtual GGPOErrorCode CurrentFrame(int& current) =0;
-   /* SWOS United: the last frame whose input from every player is known. */
+   /* OpenSWOS: the last frame whose input from every player is known. */
    virtual GGPOErrorCode ConfirmedFrame(int& ) { return GGPO_ERRORCODE_UNSUPPORTED; }
    virtual GGPOErrorCode SetPredictionBalance(bool ) { return GGPO_ERRORCODE_UNSUPPORTED; }
    virtual GGPOErrorCode Chat(const char* text) = 0;// { return GGPO_OK; }
@@ -31,7 +31,7 @@ public:
    virtual GGPOErrorCode SetFrameDelay(GGPOPlayerHandle , int ) { return GGPO_ERRORCODE_UNSUPPORTED; }
    virtual GGPOErrorCode SetDisconnectTimeout(int ) { return GGPO_ERRORCODE_UNSUPPORTED; }
    virtual GGPOErrorCode SetDisconnectNotifyStart(int ) { return GGPO_ERRORCODE_UNSUPPORTED; }
-   /* SWOS United: the key packets are checksummed with (ggpo_set_packet_key). */
+   /* OpenSWOS: the key packets are checksummed with (ggpo_set_packet_key). */
    virtual GGPOErrorCode SetPacketKey(const uint8 *) { return GGPO_ERRORCODE_UNSUPPORTED; }
 };
 

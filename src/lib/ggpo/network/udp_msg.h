@@ -38,7 +38,7 @@ struct UdpMsg
       uint16         magic;
       uint16         sequence_number;
       uint8          type;            /* packet type */
-      /* SWOS United: a keyed checksum of the whole packet, computed with this
+      /* OpenSWOS: a keyed checksum of the whole packet, computed with this
        * field zero (Udp::PacketMac). A packet whose checksum does not match is
        * dropped before anything reads it -- see UdpProtocol::OnMsg. */
       uint32         mac;
@@ -98,7 +98,7 @@ public:
       return sizeof(hdr) + PayloadSize();
    }
 
-   /* SWOS United: is `len` bytes exactly the packet this header describes? Checked
+   /* OpenSWOS: is `len` bytes exactly the packet this header describes? Checked
     * BEFORE PacketSize is trusted: an unknown type would reach the ASSERT below, and
     * a num_bits off the wire could claim more input than the datagram holds. */
    bool SizeIsValid(int len) {

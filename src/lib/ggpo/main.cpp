@@ -159,7 +159,7 @@ ggpo_get_current_frame(GGPOSession *ggpo, int& nFrame)
    return ggpo->CurrentFrame(nFrame);
 }
 
-/* SWOS United: see ggponet.h. */
+/* OpenSWOS: see ggponet.h. */
 GGPOErrorCode
 ggpo_get_confirmed_frame(GGPOSession *ggpo, int& nFrame)
 {

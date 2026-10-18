@@ -1,22 +1,22 @@
-# The `swos-united` branch
+# The `openswos` branch
 
-This branch is what SWOS United (github.com/benbaker76/SWOS-United) builds
+This branch is what OpenSWOS (github.com/benbaker76/OpenSWOS) builds
 against, as a submodule at `third_party/ggpo-x`.
 
 **The patch list is the diff**, not a table someone has to keep honest:
 
 ```bash
-git diff master...swos-united
+git diff master...openswos
 ```
 
 Based on **`dd7fa14`**, upstream `master` as of 2026-09-17. It started on `a24d115`,
 the commit SWOS 2020 pins, and caught up by a merge, gated on the tests below. What
-the seven commits between them changed, for a two-player session like SWOS United's:
+the seven commits between them changed, for a two-player session like OpenSWOS's:
 
 - **`ggpo_start_session` takes the frame rate** (`float fps`, afaeb04). The remote
   frame estimate used a hard-coded 60; SWOS plays at 50 (Amiga) or 70 (DOS).
 - **Time sync subtracts the REMOTE peer's input delay** (b0428eb); it subtracted our
-  own. Two peers with the same delay -- SWOS United always agrees one -- get the same
+  own. Two peers with the same delay -- OpenSWOS always agrees one -- get the same
   `frames_ahead` as before. `TimeSync::_frameDelay2` is now initialised: it was sent
   uninitialised in the first sync request, and in every one when the delay is 0.
 - Ping is a 10-second smoothed average, `MAX_FRAME_ADVANTAGE` is 30, the send and
@@ -80,11 +80,11 @@ SWOS-specific and all of it should be useful to anyone off Windows.
   one-way case. A gap under two frames is deliberately left alone: depth is whole frames,
   and a peer at 1 with the other at 0 is the least a link short by under a frame allows
   ("sharing" it puts both at 1). The caller does the waiting, as for `TIMESYNC`.
-  SWOS United's side and the measurements: its `docs/NETPLAY_BALANCE.md`.
+  OpenSWOS's side and the measurements: its `docs/NETPLAY_BALANCE.md`.
 
 - **`GGPO_SEND_FRAME_ADVANTAGE`** (default 1, GGPO's own behaviour). 0 sends no frame
   advantage in the quality report, so a peer's time sync recommendation rests on its own
-  estimate alone (`-local / 2`). SWOS United builds with 0: its pacing was tuned that way
+  estimate alone (`-local / 2`). OpenSWOS builds with 0: its pacing was tuned that way
   (see the second fix below). With 1 the figure is converted through a signed int;
   upstream casts a negative float straight to `uint8`, which is undefined.
 
@@ -104,11 +104,11 @@ never 0 at startup.
 
 ## Keeping it
 
-**Merge** a newer upstream; do not rebase. SWOS United's history pins commits of this
-branch as its submodule, and a rebase would rewrite them away -- every older SWOS United
+**Merge** a newer upstream; do not rebase. OpenSWOS's history pins commits of this
+branch as its submodule, and a rebase would rewrite them away -- every older OpenSWOS
 commit would then point at a GGPO that no longer exists on the remote. The patch list
-stays readable either way: `git diff master...swos-united` diffs from the merge base.
-After any change, SWOS United must still pass:
+stays readable either way: `git diff master...openswos` diffs from the merge base.
+After any change, OpenSWOS must still pass:
 
 ```bash
 bin/SWOS.x86_64 --netplay-selftest        # GGPO's own tests + the link

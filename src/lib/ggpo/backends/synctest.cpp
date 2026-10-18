@@ -104,7 +104,7 @@ GGPOErrorCode SyncTestBackend::CurrentFrame(int& current)
     current = _sync.GetFrameCount();
     return GGPO_OK;
 }
-/* SWOS United: every input of a synctest is local, so every frame played is confirmed. */
+/* OpenSWOS: every input of a synctest is local, so every frame played is confirmed. */
 GGPOErrorCode SyncTestBackend::ConfirmedFrame(int& confirmed)
 {
     confirmed = _sync.GetFrameCount() - 1;
@@ -159,7 +159,7 @@ SyncTestBackend::IncrementFrame(uint16_t )
             LogSaveStates(info);
             RaiseSyncError("Checksum for frame %d does not match saved (%d != %d)", frame, checksum, info.checksum);
          }
-         /* SWOS United: only when GGPO logging is on, like BeginLog -- a match played through
+         /* OpenSWOS: only when GGPO logging is on, like BeginLog -- a match played through
           * a synctest is tens of thousands of frames. A mismatch still prints. */
          if (Platform::GetConfigBool("ggpo.log")) {
             printf("Checksum %08d for frame %d matches.\n", checksum, info.frame);
@@ -202,7 +202,7 @@ SyncTestBackend::BeginLog(int saving)
 {
    EndLog();
 
-   /* SWOS United: only when GGPO logging is on (it never is -- GetConfigBool is false
+   /* OpenSWOS: only when GGPO logging is on (it never is -- GetConfigBool is false
     * on every platform). Otherwise a synctest writes two files per frame into the
     * working directory. */
    if (!Platform::GetConfigBool("ggpo.log")) {

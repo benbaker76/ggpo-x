@@ -355,7 +355,7 @@ UdpProtocol::OnMsg(UdpMsg *msg, int len)
       &UdpProtocol::OnChat,            /* InputAck */
    };
 
-   /* SWOS United: before anything reads a field, the packet has to be the size its
+   /* OpenSWOS: before anything reads a field, the packet has to be the size its
     * header claims and carry our checksum (Udp::PacketMac). What fails is dropped
     * as if it never arrived; GGPO resends anything unacknowledged. */
    if (!msg->SizeIsValid(len)) {

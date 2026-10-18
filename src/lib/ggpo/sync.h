@@ -56,7 +56,7 @@ public:
     void IncrementFrame(void);
 
     int GetFrameCount() { return _framecount; }
-    /* SWOS United: the last frame whose input from every player is known (-1: none). */
+    /* OpenSWOS: the last frame whose input from every player is known (-1: none). */
     int GetLastConfirmedFrame() const { return _last_confirmed_frame; }
     bool InRollback() { return _rollingback; }
 

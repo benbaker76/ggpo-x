@@ -47,7 +47,7 @@ Udp::Udp() :
 {
 }
 
-/* SWOS United: packet integrity.
+/* OpenSWOS: packet integrity.
  *
  * GGPO trusted every field of every packet it received; the only check was a
  * 16-bit magic number, which a damaged or forged packet keeps. One flipped bit in

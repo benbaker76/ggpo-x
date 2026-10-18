@@ -12,7 +12,7 @@
 #ifdef __cplusplus
 #include <cstdint>
 #else
-/* SWOS United: C callers (src/netplay.c) include this header too. */
+/* OpenSWOS: C callers (src/netplay.c) include this header too. */
 #include <stdint.h>
 #include <stdbool.h>
 #endif
@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-/* SWOS United: portable spellings of the C++-only and MSVC-only bits below. */
+/* OpenSWOS: portable spellings of the C++-only and MSVC-only bits below. */
 #if !defined(_MSC_VER) && !defined(__cdecl)
 #  define __cdecl
 #endif
@@ -63,7 +63,7 @@ extern "C" {
  * the quality report, as GGPO always has: the time sync's recommendation is then
  * -(remote + local) / 2.  0 sends none, so a peer's recommendation rests on its own
  * estimate alone, -local / 2.  A caller whose pacing was tuned that way sets 0
- * (SWOS United does, see SWOS_UNITED.md); both peers must be built alike.
+ * (OpenSWOS does, see OPENSWOS.md); both peers must be built alike.
  */
 #ifndef GGPO_SEND_FRAME_ADVANTAGE
 #define GGPO_SEND_FRAME_ADVANTAGE 1
@@ -609,7 +609,7 @@ GGPO_API GGPOErrorCode __cdecl ggpo_advance_frame(GGPOSession *, uint16_t checks
 GGPO_API GGPOErrorCode __cdecl ggpo_get_current_frame(GGPOSession* ggpo, GGPO_OUT_REF(int) nFrame);
 
 /*
- * ggpo_get_confirmed_frame -- SWOS United: the last frame whose input from every player is
+ * ggpo_get_confirmed_frame -- OpenSWOS: the last frame whose input from every player is
  * known, so that nothing up to it will be rolled back again (-1 before any).
  */
 GGPO_API GGPOErrorCode __cdecl ggpo_get_confirmed_frame(GGPOSession* ggpo, GGPO_OUT_REF(int) nFrame);
@@ -622,7 +622,7 @@ GGPO_API GGPOErrorCode __cdecl ggpo_get_confirmed_frame(GGPOSession* ggpo, GGPO_
 GGPO_API GGPOErrorCode __cdecl ggpo_set_prediction_balance(GGPOSession* ggpo, int enabled);
 
 /*
- * ggpo_set_packet_key -- SWOS United: the 16-byte key every packet of this session is
+ * ggpo_set_packet_key -- OpenSWOS: the 16-byte key every packet of this session is
  * checksummed with (SipHash-2-4). Both peers must set the same key, before
  * ggpo_add_player starts the sync; a packet that fails its checksum is dropped
  * unread. Without a call the key is all zero, which still rejects packets damaged

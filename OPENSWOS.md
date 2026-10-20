@@ -32,7 +32,7 @@ the MSVC secure CRT directly. This builds with GCC and Clang on Linux, Cygwin
 and macOS, and is callable from C without a bridge layer. Nothing here is
 SWOS-specific and all of it should be useful to anyone off Windows.
 
-**Six additions, and two fixes.**
+**Seven additions, and two fixes.**
 
 - `ggpo_get_confirmed_frame` — the sync layer's last confirmed frame. A peer may
   only end a match on a frame that nothing will roll back again, and upstream
@@ -81,6 +81,13 @@ SWOS-specific and all of it should be useful to anyone off Windows.
   and a peer at 1 with the other at 0 is the least a link short by under a frame allows
   ("sharing" it puts both at 1). The caller does the waiting, as for `TIMESYNC`.
   OpenSWOS's side and the measurements: its `docs/NETPLAY_BALANCE.md`.
+
+- **Kick-off prediction** (thd79). Until any input from the other player has been
+  confirmed, `Sync::AddLocalInput` lets a peer predict only 1 frame: each peer leaves the
+  sync phase on its own, and the first out used to run the whole prediction window ahead
+  while the other was still synchronizing. `ggpo_set_kickoff_prediction` turns it off for
+  a session (on by default; off is the library as it was), before the first input and
+  the same on both peers -- OpenSWOS's lobby has it as one of the host's switches.
 
 - **`GGPO_SEND_FRAME_ADVANTAGE`** (default 1, GGPO's own behaviour). 0 sends no frame
   advantage in the quality report, so a peer's time sync recommendation rests on its own

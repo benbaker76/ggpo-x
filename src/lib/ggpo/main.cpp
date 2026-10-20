@@ -179,6 +179,15 @@ ggpo_set_prediction_balance(GGPOSession *ggpo, int enabled)
 }
 
 GGPOErrorCode
+ggpo_set_kickoff_prediction(GGPOSession *ggpo, int enabled)
+{
+   if (!ggpo) {
+      return GGPO_ERRORCODE_INVALID_SESSION;
+   }
+   return ggpo->SetKickoffPrediction(enabled != 0);
+}
+
+GGPOErrorCode
 ggpo_set_packet_key(GGPOSession *ggpo, const unsigned char *key)
 {
    if (!ggpo) {

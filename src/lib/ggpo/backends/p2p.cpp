@@ -461,6 +461,11 @@ GGPOErrorCode Peer2PeerBackend::ConfirmedFrame(int& confirmed)
     confirmed = _sync.GetLastConfirmedFrame();
     return GGPO_OK;
 }
+GGPOErrorCode Peer2PeerBackend::SetKickoffPrediction(bool enabled)
+{
+    _sync.SetKickoffPrediction(enabled);
+    return GGPO_OK;
+}
 GGPOErrorCode Peer2PeerBackend::SetPredictionBalance(bool enabled)
 {
 #if GGPO_PREDICTION_BALANCE

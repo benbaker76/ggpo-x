@@ -62,6 +62,9 @@ public:
 
     bool GetEvent(Event& e);
     int  MaxPredictionFrames() const { return _max_prediction_frames; }
+    /* OpenSWOS: predict 1 frame until the other player's first input is confirmed
+     * (thd79, AddLocalInput). On unless turned off for a session. */
+    void SetKickoffPrediction(bool on) { _kickoff_prediction = on; }
 protected:
     friend SyncTestBackend;
 
@@ -100,6 +103,7 @@ protected:
    int            _last_confirmed_frame;
    int            _framecount;
    int            _max_prediction_frames;
+   bool           _kickoff_prediction;
 
    std::vector<InputQueue>     _input_queues;
 

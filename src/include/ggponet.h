@@ -622,6 +622,15 @@ GGPO_API GGPOErrorCode __cdecl ggpo_get_confirmed_frame(GGPOSession* ggpo, GGPO_
 GGPO_API GGPOErrorCode __cdecl ggpo_set_prediction_balance(GGPOSession* ggpo, int enabled);
 
 /*
+ * ggpo_set_kickoff_prediction -- OpenSWOS: until the other player's first input is
+ * confirmed, predict only 1 frame (thd79), so the peer that leaves the sync phase first
+ * waits at frame 0 instead of running the whole prediction window ahead.  On by default;
+ * off is the library as it was before.  Set it before the first ggpo_add_local_input,
+ * the same on both peers.
+ */
+GGPO_API GGPOErrorCode __cdecl ggpo_set_kickoff_prediction(GGPOSession* ggpo, int enabled);
+
+/*
  * ggpo_set_packet_key -- OpenSWOS: the 16-byte key every packet of this session is
  * checksummed with (SipHash-2-4). Both peers must set the same key, before
  * ggpo_add_player starts the sync; a packet that fails its checksum is dropped

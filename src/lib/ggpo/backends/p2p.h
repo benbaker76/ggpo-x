@@ -39,6 +39,7 @@ public:
    virtual GGPOErrorCode CurrentFrame(int& current) override;
    virtual GGPOErrorCode ConfirmedFrame(int& confirmed) override;
    virtual GGPOErrorCode SetPredictionBalance(bool enabled) override;
+   virtual GGPOErrorCode SetKickoffPrediction(bool enabled) override;
 public:
    virtual void OnMsg(sockaddr_in &from, UdpMsg *msg, int len) override;
 

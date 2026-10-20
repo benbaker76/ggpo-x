@@ -23,6 +23,7 @@ public:
    /* OpenSWOS: the last frame whose input from every player is known. */
    virtual GGPOErrorCode ConfirmedFrame(int& ) { return GGPO_ERRORCODE_UNSUPPORTED; }
    virtual GGPOErrorCode SetPredictionBalance(bool ) { return GGPO_ERRORCODE_UNSUPPORTED; }
+   virtual GGPOErrorCode SetKickoffPrediction(bool ) { return GGPO_ERRORCODE_UNSUPPORTED; }
    virtual GGPOErrorCode Chat(const char* text) = 0;// { return GGPO_OK; }
    virtual GGPOErrorCode DisconnectPlayer(GGPOPlayerHandle handle) = 0;// { return GGPO_OK; }
    virtual GGPOErrorCode GetNetworkStats(GGPONetworkStats *, GGPOPlayerHandle ) { return GGPO_OK; }

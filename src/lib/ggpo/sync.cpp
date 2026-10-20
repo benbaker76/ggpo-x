@@ -16,6 +16,7 @@ Sync::Sync(UdpMsg::connect_status *connect_status, int maxPrediction) :
    _framecount = 0;
    _last_confirmed_frame = -1;
    _max_prediction_frames = 0;
+   _kickoff_prediction = true;
 }
 
 Sync::~Sync()
@@ -60,8 +61,9 @@ Sync::AddLocalInput(int queue, GameInput &input)
    // Until any input from the other player has been confirmed, predict only 1 frame
    // (thd79). Each peer leaves the sync phase on its own; without this the first one
    // out predicted the whole window while the other was still synchronizing, and the
-   // two spent the start of the match pulling back into step.
-   int predFrames = _last_confirmed_frame == -1 ? 1 : _max_prediction_frames;
+   // two spent the start of the match pulling back into step. A session can turn it
+   // off (ggpo_set_kickoff_prediction), which is the library as it was before.
+   int predFrames = _kickoff_prediction && _last_confirmed_frame == -1 ? 1 : _max_prediction_frames;
    int frames_behind = _framecount - _last_confirmed_frame;
    if (_framecount >= predFrames && frames_behind >= predFrames) {
       Log("Rejecting input from emulator: reached prediction barrier.\n");

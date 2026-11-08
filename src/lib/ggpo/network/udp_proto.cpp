@@ -9,6 +9,7 @@
 #include "udp_proto.h"
 #include "bitvector.h"
 #include <cmath>
+#include <cstring>   /* strnlen */
 #include <iostream>
 static const int UDP_HEADER_SIZE = 28;     /* Size of IP + UDP headers */
 static const int NUM_SYNC_PACKETS = 5;
@@ -777,7 +778,9 @@ void UdpProtocol::ConsumeChat(std::function<void(const char*)> onChat)
 }
 bool UdpProtocol::OnChat(UdpMsg* msg, int )
 {
-    _chatMessages.push_back(msg->u.chat.msg);
+    /* The text is the other peer's: never trust it to end. At most MAX_CHAT_LENGTH - 1
+     * characters, as SendChat sends, whatever came. */
+    _chatMessages.emplace_back(msg->u.chat.msg, strnlen(msg->u.chat.msg, MAX_CHAT_LENGTH - 1));
     return true;
 }
 
